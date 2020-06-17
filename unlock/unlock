@@ -1,0 +1,22 @@
+#!/system/xbin/bash
+
+function getScreen(){
+	state=`dumpsys display | grep mScreenState | awk -F"=" '{print $2}'`
+	locked=`dumpsys window | grep mShowingLockscreen | awk '/mShowingLockscreen/' | awk -F" " '{print $1}' | awk -F"=" '{print $2}'`
+}
+function open(){
+	input swipe 160 460 160 50
+	while IFS= read -r pass
+	do
+		input text $pass
+		input keyevent KEYCODE_ENTER
+	done</root/pass.txt
+}
+getScreen
+
+if [ "$state" == "OFF" ];then
+	input keyevent KEYCODE_POWER
+	open
+elif [ "$state" == "ON" ] && [ "$locked" == "true" ];then
+	open
+fi
