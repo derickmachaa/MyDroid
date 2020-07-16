@@ -1,19 +1,23 @@
 #!/system/xbin/bash
 	##action and reaction are equal and opposite..so for every input there must be an equal output
 
-	##Drop all Rules and clean the table;set all policies to allow
-_my_dns_port=5353 #my dns server
+#My DNS
+_my_dns_port=5353
+# Tor's Dns
 _tor_dns_port=55353
+#Tor's Transport
 _tor_trans_port=59040
+#Tor's ID
 _isolate_uid=10070
+# Tor's VirtualAddrNetworkIPv4
+_virt_addr="10.192.0.0/10"
+
+
+##Drop all Rules and clean the table;set all policies to allow
 iptables -F
-#iptables -X
 iptables -t nat -F
-#iptables -t nat -X
 iptables -t mangle -F
-#iptables -t mangle -X
 iptables -t raw -F
-#iptables -t raw -X
 iptables -P INPUT  ACCEPT
 iptables -P FORWARD  ACCEPT
 iptables -P OUTPUT  ACCEPT
@@ -63,6 +67,8 @@ do
 	if [[ $_tor == 1 ]];then
 		_net=0;_ap0=0;_wlan0=0 #DISABLE CLEARNET ON ALL INTERFACES
 		iptables -t nat -A OUTPUT ! -o lo -p tcp -m owner --uid-owner $_uid -m tcp -j REDIRECT --to-ports $_tor_trans_port
+		iptables -t nat -A OUTPUT -d $_virt_addr -m owner --uid-owner $_uid -p tcp -j REDIRECT --to-ports $_tor_trans_port
+		iptables -t nat -A OUTPUT -d $_virt_addr -m owner --uid-owner $_uid -p udp -j REDIRECT --to-ports $_tor_trans_port
 		iptables -A angel-Output -p tcp --dport $_tor_trans_port -m owner --uid-owner $_uid -j ACCEPT
 	fi
 	if [[ $_ap0 == 1 ]];then
@@ -96,8 +102,12 @@ if [ "$1" == "1" ];then
 	#state 1 take everyting incoming to tor
 	#anonymize middlebox
 	iptables -t nat -A PREROUTING -i ap0 -p udp --dport 53 -j REDIRECT --to-ports $_tor_dns_port
-	iptables -t nat -A PREROUTING -i ap0 -p udp --dport $_dns_port -j REDIRECT --to-ports $_tor_dns_port
+	iptables -t nat -A PREROUTING -i ap0 -p tcp --dport 53 -j REDIRECT --to-ports $_tor_dns_port
+	iptables -t nat -A PREROUTING -i ap0 -p udp --dport $_tor_dns_port -j REDIRECT --to-ports $_tor_dns_port
 	iptables -t nat -A PREROUTING -i ap0 -d 192.168.43.1/24 -j RETURN
+	#*nat PREROUTING (For middlebox)
+	iptables -t nat -A PREROUTING -d $_virt_addr -i ap0 -p tcp -j REDIRECT --to-ports $_tor_trans_port
+	iptables -t nat -A PREROUTING -d $_virt_addr -i ap0 -p udp -j REDIRECT --to-ports $_tor_trans_port
 	iptables -t nat -A PREROUTING -i ap0 -p tcp -j REDIRECT --to-ports $_tor_trans_port
 
 
@@ -115,7 +125,11 @@ elif [ "$1" == "2" ];then
 			if [ "$_iptor" == 1 ];then
 
 				iptables -t nat -A PREROUTING -i ap0 -s $_ip -p udp --dport 53 -j REDIRECT --to-ports $_tor_dns_port
-				iptables -t nat -A PREROUTING -i ap0 -s $_ip -p udp --dport $_dns_port -j REDIRECT --to-ports $_tor_dns_port
+				iptables -t nat -A PREROUTING -i ap0 -s $_ip -p tcp --dport 53 -j REDIRECT --to-ports $_tor_dns_port
+				iptables -t nat -A PREROUTING -i ap0 -s $_ip -p udp --dport $_tor_dns_port -j REDIRECT --to-ports $_tor_dns_port
+				#*nat PREROUTING (For middlebox)
+				iptables -t nat -A PREROUTING -d $_virt_addr -i ap0 -s $_ip -p tcp -j REDIRECT --to-ports $_tor_trans_port
+				iptables -t nat -A PREROUTING -d $_virt_addr -i ap0 -s $_ip -p udp -j REDIRECT --to-ports $_tor_trans_port
 				iptables -t nat -A PREROUTING -i ap0 -s $_ip -d 192.168.43.1/24 -j RETURN
 				iptables -t nat -A PREROUTING -i ap0 -s $_ip -p tcp -j REDIRECT --to-ports $_tor_trans_port
 			elif [ $_iptor == 0 ];then
