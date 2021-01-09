@@ -3,8 +3,8 @@
 
 ##useful variables
 #My custom DNS port...this is where all dns requests will be forwarded..use zero if none
-_my_dns_port=0
-#_my_dns_port=5353
+#_my_dns_port=0
+_my_dns_port=5353
 # Tor's Dns
 _tor_dns_port=55353
 #Tor's Transport
@@ -18,9 +18,9 @@ _teth_ifaces=(ap0 rndis0 bt-pan0)
 #internet interfaces 
 _internet_ifaces=(ccmni0 ccmni1)
 #allowed apps file i.e file where apps with access are defined
-_apps_allow=/root/apps.txt
+_apps_allow=/root/firewall/apps.txt
 #allowed ips file i.e file where ip addresses with access are defined
-_ips_allow=/root/ips.txt
+_ips_allow=/root/firewall/ips.txt
 #ip addresses which should not be routed through tor
 _non_tor="127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 
@@ -399,17 +399,17 @@ case $target in
 			case $action in
 				enable)
 					echo enabling app $_uid
-					for intf in ${interface:-?}
+					for intf in ${interface:-\*}
 					do
-						app_control -I $_uid `echo $intf|tr -d ?`
+						app_control -I $_uid `echo $intf|tr -d \*`
 					done
 					modify_file $_apps_allow add $_uid "$_uid,0,$interface"
 					;;
 				disable)
 					echo disabling $uid
-					for intf in ${interface:-?}
+					for intf in ${interface:-\*}
 					do
-						app_control -D $_uid `echo $intf|tr -d ?`
+						app_control -D $_uid `echo $intf|tr -d \*`
 					done
 					modify_file $_apps_allow del $_uid
 					;;
@@ -442,28 +442,28 @@ case $target in
 		else
 			action="$2";_ip="$3";torify="$4";interface=`echo "$5"|tr ',' ' '`;quota="$6"
 			if [[ "$action" == "enable" ]] && [[ "$torify" == "1" ]];then
-				for intf in ${interface:-?}
+				for intf in ${interface:-\*}
 				do
-					tor_control -I $_ip `echo $intf|tr -d ?` $quota
+					tor_control -I $_ip `echo $intf|tr -d \*` $quota
 				done
 			modify_file $_ips_allow add $_ip "$_ip,$quota,$torify,$interface"	
 	
 			elif [[ "$action" == "enable" ]] && [[ "$torify" == "0" ]];then
-				for intf in ${interface:-?}
+				for intf in ${interface:-\*}
 				do
-					nat_control -I $_ip `echo $intf|tr -d ?` $quota
+					nat_control -I $_ip `echo $intf|tr -d \*` $quota
 				done
 
 			elif [[ "$action" == "disable" ]] && [[ "$torify" == "1" ]];then
-				for intf in ${interface:-?}
+				for intf in ${interface:-\*}
 				do
-					tor_control -D $_ip `echo $intf|tr -d ?` $quota
+					tor_control -D $_ip `echo $intf|tr -d \*` $quota
 				done
 
 			elif [[ "$action" == "disable" ]] && [[ "$torify" == "0" ]];then
-				for intf in ${interface:-?}
+				for intf in ${interface:-\*}
 				do
-					nat_control -D $_ip `echo $intf|tr -d ?` $quota
+					nat_control -D $_ip `echo $intf|tr -d \*` $quota
 				done
 			else
 				echo missing or invalid option
