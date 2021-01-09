@@ -3,14 +3,14 @@
 
 ##useful variables
 #My custom DNS port...this is where all dns requests will be forwarded..use zero if none
-#_my_dns_port=0
-_my_dns_port=5353
+_my_dns_port=0
+#_my_dns_port=5353
 # Tor's Dns
 _tor_dns_port=55353
 #Tor's Transport
-_tor_trans_port=59040
+_tor_trans_port=9040
 #Tor's ID
-_isolate_uid=10063
+_isolate_uid=u0_a93
 # Tor's VirtualAddrNetworkIPv4
 _virt_addr="10.192.0.0/10"
 #tethering interfaces
