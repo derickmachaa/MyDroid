@@ -1,0 +1,36 @@
+#!/system/xbin/bash
+PIDFILE=/sdcard/unlock.pid
+DBFILE=/data/data/com.android.providers.settings/databases/settings.db
+
+if [[ -f $PIDFILE ]];then
+	PID=`cat $PIDFILE 2>/dev/null`
+	if [ -d /proc/$PID ];then
+		echo "process already running with pid:$PID"
+		exit 1
+	else
+		echo $$ > $PIDFILE
+		if [ $? -ne 0 ];then
+			echo "could not create file"
+			exit 1
+		fi
+	fi
+else
+	echo $$ > $PIDFILE
+fi
+
+vol=`sqlite3 -batch $DBFILE 'select sum(value) from system where name like "volume%speaker" and not name="volume_voice_speaker"'`
+
+if [[ $vol -le 85 ]] && [[ $vol -ge 80 ]] ;then
+	/root/.local/bin/unlock
+	if [[ $? -eq 0 ]];then
+		echo "$vol:unlocked:`date`"
+		sqlite3 -batch $DBFILE 'update system set value=0 where name like "volume_ring_speaker"'
+	else
+		rm $PIDFILE 2>/dev/null
+		exit 1
+	fi
+else
+	rm $PIDFILE 2>/dev/null
+	exit 1
+fi
+rm $PIDFILE 2>/dev/null
