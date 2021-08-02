@@ -3,18 +3,20 @@
 
 ##useful variables
 #My custom DNS port...this is where all dns requests will be forwarded..use zero if none
-_my_dns_port=0
-#_my_dns_port=5353
+#_my_dns_port=0
+_my_dns_port=5353
+#nflog-group for logging
+_nflog_group=43
 # Tor's Dns
 _tor_dns_port=55353
 #Tor's Transport
-_tor_trans_port=9040
+_tor_trans_port=59040
 #Tor's ID
-_isolate_uid=u0_a93
+_isolate_uid=10063
 # Tor's VirtualAddrNetworkIPv4
 _virt_addr="10.192.0.0/10"
 #tethering interfaces
-_teth_ifaces=(ap0 rndis0 bt-pan0)
+_teth_ifaces=(ap0 rndis0 bt-pan)
 #internet interfaces 
 _internet_ifaces=(ccmni0 ccmni1)
 #allowed apps file i.e file where apps with access are defined
@@ -304,7 +306,7 @@ function app_main(){
 
 function end(){
 		##REJECT ALL NON-MATCHING
-	iptables -A angel-Reject -j NFLOG --nflog-prefix "Access Denied"
+	iptables -A angel-Reject -j NFLOG --nflog-group $_nflog_group --nflog-prefix "Access Denied"
 	iptables -A angel-Reject -p tcp -j REJECT --reject-with tcp-reset
 	iptables -A angel-Reject -p udp -j REJECT --reject-with icmp-port-unreachable
 	iptables -A angel-Allow -j angel-Reject
