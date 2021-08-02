@@ -1,0 +1,27 @@
+#!/system/xbin/bash
+#generally random int is ($RANDOM % (upper - lower + 1)) + lower
+function ascii(){
+pass=""
+for i in {1..4}
+do
+randint=$(( ($RANDOM % 26 ) + 97 ))
+pass+=`printf "\x$(printf '%x' $randint)"`
+randint=$(( ($RANDOM % 26 ) + 65 ))
+pass+=`printf "\x$(printf '%x' $randint)"`
+randint=$(( ($RANDOM % 15 ) + 33 ))
+pass+=`printf "\x$(printf '%x' $randint)"`
+randint=$(( ($RANDOM % 10 ) + 48 ))
+pass+=`printf "\x$(printf '%x' $randint)"`
+done
+}
+function randomize(){
+final_pass=""
+for i in {0..15}
+do
+randint=$(( ($RANDOM % 15 ) + 0 ))
+final_pass+=${pass:$randint:1}
+done
+}
+ascii
+randomize
+echo $final_pass
