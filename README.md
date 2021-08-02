@@ -1,2 +1,2 @@
 # MyDroid
-bash scripts for android
+bash scripts for android <= 5 
